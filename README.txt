@@ -1,56 +1,179 @@
-Sitio web de tesis de arqueología - Nathalia Torres
-===================================================
+================================================================
+  ARQUEOLOGÍA DIGITAL — Página Web de Tesis
+  README — Instrucciones de uso
+================================================================
 
-Este paquete contiene una página web lista para mostrar una tesis de arqueología con modelos 3D interactivos.
+DESCRIPCIÓN
+-----------
+Esta carpeta contiene un sitio web estático para presentar un
+proyecto de grado en arqueología digital. Incluye un visor 3D
+interactivo que permite explorar piezas arqueológicas digitalizadas
+directamente desde el navegador.
 
-ARCHIVOS PRINCIPALES
-- index.html
-- styles.css
-- script.js
+Autora: Nathalia Torres
 
-MODO DE PUBLICACIÓN EN GITHUB PAGES
-1. Sube al repositorio estos archivos en la misma carpeta:
-   - index.html
-   - styles.css
-   - script.js
-   - models.zip
-   - previews.zip (opcional)
 
-2. El archivo models.zip debe contener los modelos 3D y puede estar armado de cualquiera de estas formas:
-   - models/A-149.glb
-   - models/A-213.glb
-   - models/CC-521.glb
-   - models/CC-2717A.glb
-   - models/CC-2355.glb
+ARCHIVOS INCLUIDOS
+------------------
+  index.html       Página principal del sitio
+  styles.css       Hoja de estilos
+  script.js        Lógica general del sitio (navegación, galería)
+  viewer3d.js      Módulo del visor 3D (Three.js)
+  README.txt       Este archivo
 
-   o también puede contener directamente los .glb en la raíz del zip. El código ya intenta encontrar ambas variantes.
+  A-149.stl        Modelo 3D — Fragmento Cerámico A-149
+  A-213.stl        Modelo 3D — Pieza Lítica A-213
+  CC-521.stl       Modelo 3D — Vasija Ceremonial CC-521
+  CC-2717A.stl     Modelo 3D — Ornamento CC-2717A
+  CC-2355.obj      Modelo 3D — Figurina Antropomorfa CC-2355
 
-3. El archivo previews.zip es opcional. Si lo subes, debe contener imágenes con el mismo nombre base de cada ficha, por ejemplo:
-   - previews/A-149.png
-   - previews/A-213.jpg
-   - previews/CC-521.webp
 
-   También funciona si las imágenes quedan en la raíz del zip. Extensiones soportadas:
-   png, jpg, jpeg, webp, avif.
+================================================================
+  CÓMO ABRIR LOCALMENTE
+================================================================
 
-4. Si en vez de zip prefieres usar carpetas normales, el código también sigue funcionando con:
-   - /models/*.glb
-   - /previews/*.(png|jpg|jpeg|webp|avif)
+IMPORTANTE: Los visores 3D requieren que los archivos se sirvan
+desde un servidor web local. Abrir index.html directamente desde
+el explorador de archivos (file://) puede provocar que los
+modelos no carguen por restricciones de seguridad (CORS).
 
-IMPORTANTE
-- La página fue ajustada para que NO dependa exclusivamente de carpetas descomprimidas.
-- Primero intentará cargar desde models.zip y previews.zip.
-- Si no existen esos zip, caerá automáticamente a las carpetas normales.
+Opciones para servidor local:
 
-EJECUCIÓN LOCAL
-Abre la carpeta con un servidor local. Por ejemplo:
+  1. Visual Studio Code + Live Server
+     - Instala la extensión "Live Server" en VS Code
+     - Abre la carpeta pagina-tesis en VS Code
+     - Clic derecho en index.html > "Open with Live Server"
 
-python -m http.server 8000
+  2. Python (si lo tienes instalado)
+     - Abre una terminal en la carpeta del proyecto
+     - Ejecuta:
+         python -m http.server 8000
+     - Abre http://localhost:8000 en tu navegador
 
-Luego entra desde el navegador a:
-http://localhost:8000
+  3. Node.js (si lo tienes instalado)
+     - Instala npx (viene con Node.js)
+     - Ejecuta:
+         npx serve .
+     - Abre la URL que te indique la terminal
 
-PERSONALIZACIÓN
-- Edita textos y secciones en index.html.
-- Edita colores, tipografías y espaciados en styles.css.
-- Edita el arreglo "models" en script.js si agregas más fichas arqueológicas.
+
+================================================================
+  CÓMO DESPLEGAR EN GITHUB PAGES
+================================================================
+
+  1. Sube la carpeta pagina-tesis como un repositorio en GitHub
+  2. Ve a Settings > Pages
+  3. En "Source" selecciona la rama "main" y carpeta "/ (root)"
+  4. Espera unos minutos y tu sitio estará en:
+       https://tu-usuario.github.io/nombre-repositorio/
+
+
+================================================================
+  CÓMO DESPLEGAR EN VERCEL
+================================================================
+
+  1. Sube la carpeta a un repositorio en GitHub
+  2. Entra a vercel.com e importa el repositorio
+  3. En "Framework Preset" selecciona "Other"
+  4. Haz deploy. No se requiere configuración adicional.
+
+  Alternativa rápida:
+    - Instala Vercel CLI: npm i -g vercel
+    - En la carpeta del proyecto ejecuta: vercel
+    - Sigue las instrucciones en pantalla
+
+
+================================================================
+  CÓMO EDITAR TEXTOS
+================================================================
+
+Todos los textos del sitio están en index.html. Busca las
+secciones identificadas con comentarios HTML como:
+  <!-- HERO — PORTADA -->
+  <!-- PROYECTO -->
+  <!-- METODOLOGÍA -->
+  <!-- MODELOS 3D -->
+  <!-- AUTORA -->
+
+Edita directamente el contenido de las etiquetas HTML.
+No necesitas compilar nada: solo guarda y recarga el navegador.
+
+
+================================================================
+  CÓMO AGREGAR O CAMBIAR MODELOS 3D
+================================================================
+
+  1. Coloca el nuevo archivo .stl, .obj o .glb en la RAÍZ de la
+     carpeta (junto a index.html, no en subcarpetas).
+
+  2. Abre el archivo script.js
+
+  3. Busca el array MODELS al inicio del archivo.
+     Cada entrada tiene esta estructura:
+
+       {
+         id:          'mi-pieza',
+         file:        './MI-PIEZA.stl',
+         code:        'MI-PIEZA',
+         name:        'Nombre descriptivo',
+         description: 'Descripción breve de la pieza.'
+       }
+
+  4. Agrega una nueva entrada al array o modifica las existentes.
+
+  5. Guarda y recarga el navegador.
+
+
+================================================================
+  CÓMO AGREGAR PREVIEWS OPCIONALES (imágenes)
+================================================================
+
+El sistema funciona perfectamente sin imágenes preview. Si deseas
+agregar imágenes de referencia:
+
+  1. Coloca la imagen en la raíz con el mismo nombre base que el
+     modelo, pero con extensión .png
+     Ejemplo: A-149.png para A-149.stl
+
+  2. Estas imágenes son opcionales y actualmente el sistema
+     no las carga automáticamente, pero puedes integrarlas
+     editando las tarjetas en script.js si lo deseas.
+
+
+================================================================
+  FORMATOS SOPORTADOS
+================================================================
+
+  .stl   — STL (Standard Tessellation Language)
+  .obj   — Wavefront OBJ
+  .glb   — glTF Binary (compatible si se necesita)
+
+
+================================================================
+  REQUISITOS DEL NAVEGADOR
+================================================================
+
+Cualquier navegador moderno con soporte para WebGL:
+  - Google Chrome (recomendado)
+  - Mozilla Firefox
+  - Microsoft Edge
+  - Safari (iOS/macOS)
+
+Se recomienda una conexión a internet para cargar las librerías
+Three.js desde CDN la primera vez.
+
+
+================================================================
+  CRÉDITOS Y TECNOLOGÍAS
+================================================================
+
+  - Three.js (r160) — Librería 3D para web
+    https://threejs.org/
+
+  - Google Fonts — Cormorant Garamond e Inter
+    https://fonts.google.com/
+
+  - Diseño y desarrollo del visor interactivo para el
+    proyecto de grado de Nathalia Torres.
+
+================================================================

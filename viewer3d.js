@@ -1,368 +1,388 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/loaders/GLTFLoader.js';
-import JSZip from 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm';
+/* ============================================================
+   viewer3d.js — Módulo de visualización 3D con Three.js
+   Soporta: .stl, .obj, .glb
+   Usa CDN de Three.js r160
+   ============================================================ */
 
-const models = window.NT_ARCH_DATA?.models || [];
-const assetSources = window.NT_ARCH_DATA?.assetSources || {
-  models: { zipUrl: 'models.zip', directFolder: 'models/' },
-  previews: { zipUrl: 'previews.zip', directFolder: 'previews/' }
-};
-const previewExtensions = window.NT_ARCH_DATA?.previewExtensions || ['png', 'jpg', 'jpeg', 'webp', 'avif'];
+/**
+ * Viewer3D — Clase principal para renderizar modelos 3D interactivos
+ * 
+ * Uso:
+ *   const viewer = new Viewer3D(containerElement, {
+ *     filePath: './A-149.stl',
+ *     backgroundColor: 0x332b21,
+ *     onLoad: () => { ... },
+ *     onError: (err) => { ... }
+ *   });
+ *   viewer.dispose(); // Limpieza
+ */
+class Viewer3D {
+  constructor(container, options = {}) {
+    this.container = container;
+    this.filePath = options.filePath || '';
+    this.bgColor = options.backgroundColor ?? 0x332b21;
+    this.onLoad = options.onLoad || null;
+    this.onError = options.onError || null;
 
-const modal = document.getElementById('viewerModal');
-const modalViewer = document.getElementById('modalViewer');
-const closeModalBtn = document.getElementById('closeModal');
-const loader = new GLTFLoader();
-const viewerStates = new Map();
-const assetUrlCache = new Map();
-const assetZipCache = new Map();
-const directAssetProbeCache = new Map();
-let modalState = null;
+    this.scene = null;
+    this.camera = null;
+    this.renderer = null;
+    this.controls = null;
+    this.animationId = null;
+    this.disposed = false;
 
-function normalizePath(path = '') {
-  return path.replace(/\\/g, '/').replace(/^\.?\//, '').toLowerCase();
-}
-
-function getBaseName(path = '') {
-  const normalized = normalizePath(path);
-  return normalized.split('/').pop() || normalized;
-}
-
-function getExtension(path = '') {
-  const base = getBaseName(path);
-  const parts = base.split('.');
-  return parts.length > 1 ? parts.pop().toLowerCase() : '';
-}
-
-function getMimeType(path = '') {
-  const extension = getExtension(path);
-  const map = {
-    glb: 'model/gltf-binary',
-    png: 'image/png',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    webp: 'image/webp',
-    avif: 'image/avif'
-  };
-  return map[extension] || 'application/octet-stream';
-}
-
-async function getZipBundle(bundleName) {
-  if (assetZipCache.has(bundleName)) return assetZipCache.get(bundleName);
-
-  const source = assetSources[bundleName];
-  const promise = fetch(source.zipUrl, { cache: 'no-store' })
-    .then((response) => {
-      if (!response.ok) throw new Error(`No se encontró ${source.zipUrl}`);
-      return response.arrayBuffer();
-    })
-    .then((buffer) => JSZip.loadAsync(buffer))
-    .catch(() => null);
-
-  assetZipCache.set(bundleName, promise);
-  return promise;
-}
-
-function findFileInZip(zip, requestedPath) {
-  if (!zip) return null;
-
-  const requested = normalizePath(requestedPath);
-  const requestedBase = getBaseName(requestedPath);
-  const files = Object.values(zip.files).filter((entry) => !entry.dir);
-
-  let exact = files.find((entry) => normalizePath(entry.name) === requested);
-  if (exact) return exact;
-
-  exact = files.find((entry) => normalizePath(entry.name).endsWith(`/${requested}`));
-  if (exact) return exact;
-
-  exact = files.find((entry) => getBaseName(entry.name) === requestedBase);
-  if (exact) return exact;
-
-  return null;
-}
-
-async function probeDirectAsset(path) {
-  const normalized = normalizePath(path);
-  if (directAssetProbeCache.has(normalized)) return directAssetProbeCache.get(normalized);
-
-  const promise = fetch(path, { method: 'GET', cache: 'no-store' })
-    .then((response) => (response.ok ? path : null))
-    .catch(() => null);
-
-  directAssetProbeCache.set(normalized, promise);
-  return promise;
-}
-
-async function resolveAssetUrl(path, bundleName) {
-  const cacheKey = `${bundleName}:${normalizePath(path)}`;
-  if (assetUrlCache.has(cacheKey)) return assetUrlCache.get(cacheKey);
-
-  const bundle = await getZipBundle(bundleName);
-  if (bundle) {
-    const entry = findFileInZip(bundle, path);
-    if (entry) {
-      const content = await entry.async('uint8array');
-      const blob = new Blob([content], { type: getMimeType(entry.name || path) });
-      const objectUrl = URL.createObjectURL(blob);
-      assetUrlCache.set(cacheKey, objectUrl);
-      return objectUrl;
-    }
+    this._init();
   }
 
-  assetUrlCache.set(cacheKey, path);
-  return path;
-}
-
-async function resolvePreviewUrl(previewBase) {
-  if (!previewBase) return null;
-
-  const zip = await getZipBundle('previews');
-  if (zip) {
-    for (const extension of previewExtensions) {
-      const requested = `previews/${previewBase}.${extension}`;
-      const entry = findFileInZip(zip, requested);
-      if (!entry) continue;
-
-      const cacheKey = `previews:${normalizePath(requested)}`;
-      if (assetUrlCache.has(cacheKey)) return assetUrlCache.get(cacheKey);
-
-      const content = await entry.async('uint8array');
-      const blob = new Blob([content], { type: getMimeType(requested) });
-      const objectUrl = URL.createObjectURL(blob);
-      assetUrlCache.set(cacheKey, objectUrl);
-      return objectUrl;
-    }
-  }
-
-  for (const extension of previewExtensions) {
-    const directPath = `previews/${previewBase}.${extension}`;
-    const found = await probeDirectAsset(directPath);
-    if (found) return found;
-  }
-
-  return null;
-}
-
-async function applyPreview(shell) {
-  const previewBase = shell.dataset.previewBase;
-  if (!previewBase) return;
-
-  const previewLayer = shell.querySelector('.model-preview');
-  if (!previewLayer) return;
-
-  const previewUrl = await resolvePreviewUrl(previewBase);
-  if (!previewUrl) return;
-
-  previewLayer.style.backgroundImage = `linear-gradient(180deg, rgba(8, 6, 4, 0.08), rgba(8, 6, 4, 0.45)), url("${previewUrl}")`;
-  previewLayer.hidden = false;
-}
-
-function setupViewer(container, modelPath) {
-  const shell = container.closest('.model-viewer-shell') || container.parentElement;
-  const loadingEl = shell.querySelector('.model-loading');
-  const errorEl = shell.querySelector('.model-error');
-  const placeholderEl = shell.querySelector('.model-placeholder');
-  const fallbackEl = shell.querySelector('.model-viewer-fallback');
-
-  applyPreview(shell);
-
-  const scene = new THREE.Scene();
-  scene.background = null;
-
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 2000);
-  camera.position.set(0, 0, 4);
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
-  container.appendChild(renderer.domElement);
-
-  const ambient = new THREE.HemisphereLight(0xf7ead7, 0x2b1d12, 1.4);
-  const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
-  const fillLight = new THREE.DirectionalLight(0xf8d7aa, 1.2);
-  const rimLight = new THREE.DirectionalLight(0xc48c5b, 1.0);
-  keyLight.position.set(3, 5, 6);
-  fillLight.position.set(-4, 1.5, 5);
-  rimLight.position.set(-3, 3, -4);
-  scene.add(ambient, keyLight, fillLight, rimLight);
-
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.rotateSpeed = 0.8;
-  controls.zoomSpeed = 0.9;
-  controls.panSpeed = 0.7;
-  controls.enablePan = false;
-  controls.minDistance = 0.15;
-  controls.maxDistance = 30;
-  controls.autoRotate = false;
-
-  const root = new THREE.Group();
-  scene.add(root);
-
-  const state = {
-    container,
-    scene,
-    camera,
-    renderer,
-    controls,
-    root,
-    animationId: null,
-    resizeObserver: null,
-    initialCameraPosition: new THREE.Vector3(),
-    initialTarget: new THREE.Vector3(),
-    loaded: false
-  };
-
-  function render() {
-    controls.update();
-    renderer.render(scene, camera);
-  }
-
-  function animate() {
-    state.animationId = requestAnimationFrame(animate);
-    render();
-  }
-
-  function resize() {
-    const width = container.clientWidth || 1;
-    const height = container.clientHeight || 1;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height, false);
-    render();
-  }
-
-  state.resetView = () => {
-    camera.position.copy(state.initialCameraPosition);
-    controls.target.copy(state.initialTarget);
-    controls.update();
-    render();
-  };
-
-  renderer.domElement.addEventListener('dblclick', state.resetView);
-  renderer.domElement.addEventListener('touchend', (event) => {
-    if (event.touches.length === 0 && event.changedTouches.length === 1) {
-      const now = Date.now();
-      const lastTap = renderer.domElement.dataset.lastTap ? Number(renderer.domElement.dataset.lastTap) : 0;
-      if (now - lastTap < 320) state.resetView();
-      renderer.domElement.dataset.lastTap = now;
-    }
-  });
-
-  loadingEl.hidden = false;
-
-  (async () => {
+  /* ---------- Initialization ---------- */
+  _init() {
     try {
-      const resolvedModelUrl = await resolveAssetUrl(modelPath, 'models');
-      const gltf = await loader.loadAsync(resolvedModelUrl);
+      // Scene
+      this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color(this.bgColor);
 
-      placeholderEl.hidden = true;
-      loadingEl.hidden = true;
-      if (fallbackEl) fallbackEl.hidden = true;
+      // Camera
+      const w = this.container.clientWidth || 400;
+      const h = this.container.clientHeight || 280;
+      this.camera = new THREE.PerspectiveCamera(45, w / h, 0.01, 10000);
+      this.camera.position.set(0, 0, 5);
 
-      const object = gltf.scene;
-      root.add(object);
+      // Renderer
+      this.renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        powerPreference: 'high-performance'
+      });
+      this.renderer.setSize(w, h);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      this.container.appendChild(this.renderer.domElement);
 
-      object.traverse((child) => {
-        if (child.isMesh) {
-          child.material = new THREE.MeshStandardMaterial({
-            color: 0xd3b18a,
-            roughness: 0.72,
-            metalness: 0.08
-          });
+      // Controls (OrbitControls)
+      this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+      this.controls.enableDamping = true;
+      this.controls.dampingFactor = 0.08;
+      this.controls.enablePan = true;
+      this.controls.enableZoom = true;
+      this.controls.autoRotate = true;
+      this.controls.autoRotateSpeed = 1.2;
+      this.controls.minDistance = 0.5;
+      this.controls.maxDistance = 500;
+
+      // Lights
+      this._setupLights();
+
+      // Resize observer
+      this._resizeObserver = new ResizeObserver(() => this._onResize());
+      this._resizeObserver.observe(this.container);
+
+      // Start animation loop
+      this._animate();
+
+      // Load model
+      if (this.filePath) {
+        this._loadModel(this.filePath);
+      }
+    } catch (err) {
+      console.error('Viewer3D: Error during initialization', err);
+      if (this.onError) this.onError(err);
+    }
+  }
+
+  /* ---------- Lighting ---------- */
+  _setupLights() {
+    // Ambient light for base illumination
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    this.scene.add(ambient);
+
+    // Main directional light
+    const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.0);
+    dirLight.position.set(5, 8, 5);
+    this.scene.add(dirLight);
+
+    // Fill light from opposite side
+    const fillLight = new THREE.DirectionalLight(0xe6f0ff, 0.5);
+    fillLight.position.set(-5, 3, -5);
+    this.scene.add(fillLight);
+
+    // Subtle rim/back light
+    const rimLight = new THREE.DirectionalLight(0xffeedd, 0.3);
+    rimLight.position.set(0, -3, -6);
+    this.scene.add(rimLight);
+
+    // Hemisphere light for natural feel
+    const hemiLight = new THREE.HemisphereLight(0xfff5e0, 0x4a3f32, 0.4);
+    this.scene.add(hemiLight);
+  }
+
+  /* ---------- Model Loading ---------- */
+  _loadModel(filePath) {
+    const ext = filePath.split('.').pop().toLowerCase();
+
+    switch (ext) {
+      case 'stl':
+        this._loadSTL(filePath);
+        break;
+      case 'obj':
+        this._loadOBJ(filePath);
+        break;
+      case 'glb':
+      case 'gltf':
+        this._loadGLTF(filePath);
+        break;
+      default:
+        const err = new Error(`Formato no soportado: .${ext}`);
+        console.error(err);
+        if (this.onError) this.onError(err);
+    }
+  }
+
+  _loadSTL(filePath) {
+    const loader = new THREE.STLLoader();
+    loader.load(
+      filePath,
+      (geometry) => {
+        if (this.disposed) return;
+        // Material with warm archaeological tone
+        const material = new THREE.MeshStandardMaterial({
+          color: 0xc9a87c,
+          metalness: 0.15,
+          roughness: 0.65,
+          flatShading: false
+        });
+        // Compute smooth normals
+        geometry.computeVertexNormals();
+
+        const mesh = new THREE.Mesh(geometry, material);
+        this.scene.add(mesh);
+        this._fitCameraToObject(mesh);
+        if (this.onLoad) this.onLoad();
+      },
+      undefined,
+      (err) => {
+        console.error('Viewer3D: Error loading STL', err);
+        if (this.onError) this.onError(err);
+      }
+    );
+  }
+
+  _loadOBJ(filePath) {
+    const loader = new THREE.OBJLoader();
+    loader.load(
+      filePath,
+      (object) => {
+        if (this.disposed) return;
+        // Apply material to all meshes in the OBJ
+        const material = new THREE.MeshStandardMaterial({
+          color: 0xc9a87c,
+          metalness: 0.15,
+          roughness: 0.65
+        });
+        object.traverse((child) => {
+          if (child.isMesh) {
+            child.material = material;
+            if (child.geometry) {
+              child.geometry.computeVertexNormals();
+            }
+          }
+        });
+        this.scene.add(object);
+        this._fitCameraToObject(object);
+        if (this.onLoad) this.onLoad();
+      },
+      undefined,
+      (err) => {
+        console.error('Viewer3D: Error loading OBJ', err);
+        if (this.onError) this.onError(err);
+      }
+    );
+  }
+
+  _loadGLTF(filePath) {
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      filePath,
+      (gltf) => {
+        if (this.disposed) return;
+        const model = gltf.scene;
+        this.scene.add(model);
+        this._fitCameraToObject(model);
+        if (this.onLoad) this.onLoad();
+      },
+      undefined,
+      (err) => {
+        console.error('Viewer3D: Error loading GLTF/GLB', err);
+        if (this.onError) this.onError(err);
+      }
+    );
+  }
+
+  /* ---------- Camera Auto-Fit ---------- */
+  _fitCameraToObject(object) {
+    const box = new THREE.Box3().setFromObject(object);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    // Center object at origin
+    object.position.sub(center);
+
+    // Position camera to frame the object
+    const fov = this.camera.fov * (Math.PI / 180);
+    let cameraDistance = (maxDim / 2) / Math.tan(fov / 2);
+    cameraDistance *= 1.6; // Add some margin
+
+    this.camera.position.set(
+      cameraDistance * 0.6,
+      cameraDistance * 0.4,
+      cameraDistance * 0.8
+    );
+    this.camera.lookAt(0, 0, 0);
+
+    // Update controls target
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
+
+    // Update near/far planes based on model size
+    this.camera.near = maxDim * 0.001;
+    this.camera.far = maxDim * 100;
+    this.camera.updateProjectionMatrix();
+  }
+
+  /* ---------- Animation Loop ---------- */
+  _animate() {
+    if (this.disposed) return;
+    this.animationId = requestAnimationFrame(() => this._animate());
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  /* ---------- Resize ---------- */
+  _onResize() {
+    if (this.disposed || !this.container) return;
+    const w = this.container.clientWidth;
+    const h = this.container.clientHeight;
+    if (w === 0 || h === 0) return;
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h);
+  }
+
+  /* ---------- Cleanup ---------- */
+  dispose() {
+    this.disposed = true;
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+    }
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+    }
+    if (this.controls) {
+      this.controls.dispose();
+    }
+    if (this.renderer) {
+      this.renderer.dispose();
+      if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+        this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+      }
+    }
+    // Dispose geometries and materials
+    if (this.scene) {
+      this.scene.traverse((obj) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(m => m.dispose());
+          } else {
+            obj.material.dispose();
+          }
         }
       });
-
-      const box = new THREE.Box3().setFromObject(object);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      object.position.sub(center);
-
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const fov = THREE.MathUtils.degToRad(camera.fov);
-      let distance = (maxDim / 2) / Math.tan(fov / 2);
-      distance *= 1.7;
-
-      camera.position.set(distance * 0.65, distance * 0.45, distance);
-      controls.target.set(0, 0, 0);
-      controls.minDistance = Math.max(maxDim * 0.45, 0.1);
-      controls.maxDistance = Math.max(maxDim * 8, 4);
-
-      state.initialCameraPosition.copy(camera.position);
-      state.initialTarget.copy(controls.target);
-      state.loaded = true;
-
-      resize();
-      animate();
-    } catch (error) {
-      console.error(`No fue posible cargar el modelo ${modelPath}:`, error);
-      loadingEl.hidden = true;
-      errorEl.hidden = false;
     }
-  })();
-
-  state.resizeObserver = new ResizeObserver(resize);
-  state.resizeObserver.observe(container);
-  resize();
-
-  return state;
+  }
 }
 
-function initVisibleViewers() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      const container = entry.target;
-      const modelId = container.dataset.modelId;
-      if (!viewerStates.has(modelId)) {
-        const state = setupViewer(container, container.dataset.modelPath);
-        viewerStates.set(modelId, state);
-      }
-      observer.unobserve(container);
+/* ============================================================
+   Modal Viewer — Visor ampliado en pantalla completa
+   ============================================================ */
+class ModalViewer {
+  constructor() {
+    this.overlay = document.getElementById('modal-overlay');
+    this.content = document.getElementById('modal-viewer-container');
+    this.closeBtn = document.getElementById('modal-close');
+    this.titleEl = document.getElementById('modal-title');
+    this.loadingEl = document.getElementById('modal-loading');
+    this.viewer = null;
+
+    if (this.closeBtn) {
+      this.closeBtn.addEventListener('click', () => this.close());
+    }
+    if (this.overlay) {
+      this.overlay.addEventListener('click', (e) => {
+        if (e.target === this.overlay) this.close();
+      });
+    }
+
+    // ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.close();
     });
-  }, { rootMargin: '220px 0px' });
+  }
 
-  document.querySelectorAll('.model-viewer').forEach((viewer) => observer.observe(viewer));
+  open(filePath, title) {
+    if (!this.overlay || !this.content) return;
+
+    // Show modal
+    this.overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // Set title
+    if (this.titleEl) this.titleEl.textContent = title || '';
+
+    // Show loading
+    if (this.loadingEl) this.loadingEl.style.display = 'flex';
+
+    // Dispose previous viewer
+    if (this.viewer) {
+      this.viewer.dispose();
+      this.viewer = null;
+    }
+
+    // Create viewer in modal
+    this.viewer = new Viewer3D(this.content, {
+      filePath: filePath,
+      backgroundColor: 0x2a2219,
+      onLoad: () => {
+        if (this.loadingEl) this.loadingEl.style.display = 'none';
+        // Disable auto-rotate in fullscreen for manual exploration
+        if (this.viewer && this.viewer.controls) {
+          this.viewer.controls.autoRotate = false;
+        }
+      },
+      onError: () => {
+        if (this.loadingEl) {
+          this.loadingEl.innerHTML = '<span style="color:#b57a5a;">No fue posible cargar este modelo en vista ampliada</span>';
+        }
+      }
+    });
+  }
+
+  close() {
+    if (this.viewer) {
+      this.viewer.dispose();
+      this.viewer = null;
+    }
+    if (this.overlay) {
+      this.overlay.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+    if (this.loadingEl) {
+      this.loadingEl.innerHTML = '<div class="spinner"></div><span>Cargando modelo...</span>';
+      this.loadingEl.style.display = 'flex';
+    }
+  }
 }
 
-function openModal(modelId) {
-  const model = models.find((item) => item.id === modelId);
-  if (!model) return;
-
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-
-  modalViewer.innerHTML = '';
-  if (modalState?.animationId) cancelAnimationFrame(modalState.animationId);
-  if (modalState?.resizeObserver) modalState.resizeObserver.disconnect();
-
-  modalState = setupViewer(modalViewer, model.file);
-}
-
-function closeModal() {
-  if (modalState?.animationId) cancelAnimationFrame(modalState.animationId);
-  if (modalState?.resizeObserver) modalState.resizeObserver.disconnect();
-  modalViewer.innerHTML = '';
-  modalState = null;
-}
-
-function setupEvents() {
-  document.addEventListener('click', (event) => {
-    const expandId = event.target?.dataset?.expand;
-    const resetId = event.target?.dataset?.reset;
-
-    if (expandId) openModal(expandId);
-    if (resetId && viewerStates.has(resetId)) viewerStates.get(resetId).resetView();
-  });
-
-  closeModalBtn.addEventListener('click', closeModal);
-  modal.querySelector('[data-close-modal]')?.addEventListener('click', closeModal);
-}
-
-setupEvents();
-initVisibleViewers();
+/* Make classes globally available */
+window.Viewer3D = Viewer3D;
+window.ModalViewer = ModalViewer;

@@ -1,190 +1,291 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Página web del proyecto de grado de arqueología de Nathalia Torres con galería interactiva de modelos 3D." />
-  <title>Nathalia Torres | Tesis de Arqueología</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arqueología Digital — Digitalización 3D del Patrimonio Cerámico Prehispánico</title>
+  <meta name="description" content="Proyecto de grado en arqueología digital: documentación y digitalización 3D de artefactos cerámicos y líticos del patrimonio arqueológico colombiano. Por Nathalia Torres.">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./styles.css">
+
+  <!-- Favicon (inline SVG data URI) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏺</text></svg>">
+
+  <!-- Three.js r160 via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/STLLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-  <div class="texture"></div>
 
-  <header class="site-header" id="inicio">
-    <div class="brand">NT · Arqueología Digital</div>
-    <nav class="nav">
-      <a href="#proyecto">Proyecto</a>
-      <a href="#metodologia">Metodología</a>
-      <a href="#galeria">Modelos 3D</a>
-      <a href="#autora">Autora</a>
-    </nav>
-    <button class="menu-toggle" aria-label="Abrir menú">☰</button>
-  </header>
+  <!-- ============================================================
+       NAVIGATION
+       ============================================================ -->
+  <nav class="navbar" role="navigation" aria-label="Menú principal">
+    <div class="navbar__inner">
+      <a href="#inicio" class="navbar__brand">Arqueología Digital</a>
 
-  <main>
-    <section class="hero section">
-      <div class="hero-copy reveal">
-        <span class="eyebrow">Proyecto de grado</span>
-        <h1>Tesis de arqueología <br />con visualización 3D interactiva</h1>
-        <p>
-          Un espacio digital para presentar de manera clara y visual el trabajo de grado de
-          <strong>Nathalia Torres</strong>, integrando síntesis académica, documentación patrimonial
-          y exploración tridimensional de fichas arqueológicas.
+      <ul class="navbar__links" id="nav-links">
+        <li><a href="#inicio">Inicio</a></li>
+        <li><a href="#proyecto">Proyecto</a></li>
+        <li><a href="#metodologia">Metodología</a></li>
+        <li><a href="#modelos">Modelos 3D</a></li>
+        <li><a href="#autora">Autora</a></li>
+      </ul>
+
+      <button class="navbar__toggle" id="nav-toggle" aria-label="Abrir menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       HERO — PORTADA
+       ============================================================ -->
+  <section id="inicio" class="hero">
+    <div class="hero__content">
+      <span class="hero__tag">Proyecto de Grado</span>
+      <h1 class="hero__title">Digitalización 3D del Patrimonio Cerámico Prehispánico</h1>
+      <p class="hero__subtitle">
+        Un acercamiento a la documentación, preservación y difusión digital
+        de artefactos arqueológicos mediante tecnologías de escaneo y modelado tridimensional.
+      </p>
+      <a href="#modelos" class="hero__cta">
+        Explorar Colección 3D
+        <span>→</span>
+      </a>
+    </div>
+    <div class="hero__scroll-hint">
+      <span>Descubre</span>
+      <div class="line"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PROYECTO
+       ============================================================ -->
+  <section id="proyecto" class="section section--alt">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__tag">Acerca del Proyecto</span>
+        <h2 class="section__title">Patrimonio Digital Arqueológico</h2>
+        <p class="section__desc">
+          Una propuesta académica que integra arqueología y tecnología digital
+          para preservar y democratizar el acceso al patrimonio material prehispánico.
         </p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#galeria">Explorar modelos</a>
-          <a class="btn btn-secondary" href="#proyecto">Conocer el proyecto</a>
-        </div>
+        <div class="divider"></div>
       </div>
 
-      <div class="hero-panel reveal reveal-delay">
-        <div class="hero-card">
-          <span class="card-label">Resumen visual</span>
-          <h2>Arqueología, registro digital y acceso abierto</h2>
+      <div class="project-grid">
+        <div class="project-text reveal">
           <p>
-            La página está pensada para comunicar de forma breve los objetivos, el proceso de análisis
-            y el valor de la documentación digital de piezas arqueológicas, permitiendo una lectura ágil
-            desde computador o celular.
+            Este proyecto de grado explora las posibilidades de la digitalización tridimensional
+            como herramienta de documentación arqueológica. A través del escaneo 3D de piezas
+            cerámicas y líticas procedentes de contextos excavados, se busca generar registros
+            digitales precisos que complementen los métodos tradicionales de catalogación.
           </p>
-          <ul>
-            <li>Presentación breve del proyecto</li>
-            <li>Galería de modelos 3D manipulables</li>
-            <li>Diseño adaptable para móvil y escritorio</li>
-          </ul>
+          <p>
+            La colección digitalizada comprende artefactos seleccionados por su relevancia
+            tipológica, su estado de conservación y su potencial informativo. Cada pieza fue
+            sometida a un proceso de captura fotogramétrica y modelado digital que permite su
+            análisis desde cualquier ángulo, sin necesidad de manipular el objeto original.
+          </p>
+          <p>
+            El resultado es un repositorio interactivo que pone al alcance de investigadores,
+            estudiantes y público general una experiencia inmersiva de exploración del patrimonio
+            arqueológico, contribuyendo a su valoración, estudio y salvaguarda.
+          </p>
+
+          <div class="stats-row">
+            <div class="stat">
+              <div class="stat__number">5</div>
+              <div class="stat__label">Piezas digitalizadas</div>
+            </div>
+            <div class="stat">
+              <div class="stat__number">3</div>
+              <div class="stat__label">Formatos soportados</div>
+            </div>
+            <div class="stat">
+              <div class="stat__number">360°</div>
+              <div class="stat__label">Exploración interactiva</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="project-visual reveal">
+          <div class="project-visual__icon">🏛️</div>
+          <div class="project-visual__label">Museo Digital Interactivo</div>
+          <p style="color: var(--color-text-muted); font-size: .85rem; margin-top: 12px; line-height: 1.6;">
+            Cada artefacto puede explorarse en 360° directamente desde el navegador.
+            Rota, amplía y observa los detalles de cada pieza como nunca antes.
+          </p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="section info-grid" id="proyecto">
-      <article class="panel reveal">
-        <span class="eyebrow">Sobre el proyecto</span>
-        <h2>Una lectura breve y accesible del trabajo de grado</h2>
-        <p>
-          Este sitio sirve como vitrina digital para condensar los elementos principales de la tesis:
-          contexto, propósito, metodología y aporte al estudio del material arqueológico. El texto está
-          redactado para ser fácilmente editable, de modo que puedas reemplazarlo luego por el resumen
-          exacto del proyecto.
+  <!-- ============================================================
+       METODOLOGÍA
+       ============================================================ -->
+  <section id="metodologia" class="section">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__tag">Proceso</span>
+        <h2 class="section__title">Metodología de Digitalización</h2>
+        <p class="section__desc">
+          El proceso de documentación digital sigue un protocolo riguroso que garantiza
+          la fidelidad y utilidad científica de cada modelo tridimensional.
         </p>
-      </article>
-
-      <article class="panel reveal reveal-delay">
-        <span class="eyebrow">Objetivo</span>
-        <h3>Registrar, analizar y comunicar</h3>
-        <p>
-          La propuesta destaca cómo la visualización tridimensional enriquece la lectura de las fichas
-          arqueológicas, facilita el examen morfológico de las piezas y fortalece la divulgación del
-          patrimonio material en entornos digitales.
-        </p>
-      </article>
-
-      <article class="panel reveal">
-        <span class="eyebrow">Aporte</span>
-        <h3>Experiencia interactiva</h3>
-        <p>
-          Cada modelo puede rotarse, ampliarse y observarse desde distintos ángulos. Esto permite una
-          exploración más cercana al objeto que una imagen estática, con una navegación intuitiva tanto
-          en pantalla táctil como con mouse.
-        </p>
-      </article>
-
-      <article class="panel reveal reveal-delay">
-        <span class="eyebrow">Nota editable</span>
-        <h3>Texto listo para personalizar</h3>
-        <p>
-          Puedes sustituir estos párrafos por el resumen real de la tesis, los antecedentes, la zona de
-          estudio, la cronología, la colección analizada o los hallazgos principales, sin tocar la lógica
-          de la galería 3D.
-        </p>
-      </article>
-    </section>
-
-    <section class="section methodology" id="metodologia">
-      <div class="section-heading reveal">
-        <span class="eyebrow">Metodología</span>
-        <h2>Estructura sugerida para presentar la investigación</h2>
+        <div class="divider"></div>
       </div>
 
-      <div class="steps">
-        <article class="step reveal">
-          <span class="step-number">01</span>
-          <h3>Contexto y problema</h3>
-          <p>Presenta el marco arqueológico del estudio, el tipo de material analizado y la pregunta central de la tesis.</p>
-        </article>
-        <article class="step reveal reveal-delay">
-          <span class="step-number">02</span>
-          <h3>Registro de piezas</h3>
-          <p>Explica cómo se documentaron las fichas arqueológicas y de qué manera los modelos 3D complementan la descripción técnica.</p>
-        </article>
-        <article class="step reveal">
-          <span class="step-number">03</span>
-          <h3>Análisis e interpretación</h3>
-          <p>Resume los criterios de observación, comparación y lectura morfológica empleados durante el proyecto.</p>
-        </article>
-        <article class="step reveal reveal-delay">
-          <span class="step-number">04</span>
-          <h3>Divulgación digital</h3>
-          <p>Destaca el valor de traducir resultados académicos a formatos interactivos que acerquen el patrimonio a públicos más amplios.</p>
-        </article>
-      </div>
-    </section>
+      <div class="methodology-steps">
+        <div class="step-card reveal">
+          <span class="step-card__number">01</span>
+          <div class="step-card__icon">📋</div>
+          <h3 class="step-card__title">Selección y Registro</h3>
+          <p class="step-card__text">
+            Identificación de las piezas arqueológicas con mayor potencial informativo.
+            Registro fotográfico inicial y documentación de procedencia, contexto estratigráfico
+            y estado de conservación de cada artefacto.
+          </p>
+        </div>
 
-    <section class="section gallery-section" id="galeria">
-      <div class="section-heading reveal">
-        <span class="eyebrow">Galería 3D</span>
-        <h2>Modelos arqueológicos interactivos</h2>
-        <p class="section-text">
-          Arrastra para rotar. Usa la rueda del mouse o el gesto de pellizco para acercar y alejar.
-          En móvil también puedes mover el objeto con el dedo y ampliar con dos dedos.
+        <div class="step-card reveal">
+          <span class="step-card__number">02</span>
+          <div class="step-card__icon">📷</div>
+          <h3 class="step-card__title">Captura y Escaneo</h3>
+          <p class="step-card__text">
+            Adquisición de datos tridimensionales mediante fotogrametría de alta resolución
+            y/o escaneo estructurado. Se realizan múltiples tomas desde distintos ángulos
+            para asegurar una cobertura completa de la superficie.
+          </p>
+        </div>
+
+        <div class="step-card reveal">
+          <span class="step-card__number">03</span>
+          <div class="step-card__icon">🖥️</div>
+          <h3 class="step-card__title">Procesamiento Digital</h3>
+          <p class="step-card__text">
+            Alineación de nubes de puntos, construcción de malla poligonal y optimización
+            del modelo resultante. Limpieza de artefactos de escaneo, cierre de huecos
+            y reducción poligonal controlada para uso web.
+          </p>
+        </div>
+
+        <div class="step-card reveal">
+          <span class="step-card__number">04</span>
+          <div class="step-card__icon">🌐</div>
+          <h3 class="step-card__title">Publicación Web</h3>
+          <p class="step-card__text">
+            Exportación a formatos estándar (STL, OBJ) e integración en un visor web
+            interactivo desarrollado con Three.js. Cada modelo queda accesible para
+            exploración en 360° desde cualquier navegador moderno.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MODELOS 3D
+       ============================================================ -->
+  <section id="modelos" class="section section--alt">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__tag">Colección Digital</span>
+        <h2 class="section__title">Modelos 3D Interactivos</h2>
+        <p class="section__desc">
+          Explora cada pieza arqueológica en tres dimensiones. Rota, amplía y examina
+          los detalles de los artefactos como si los tuvieras en tus manos.
         </p>
+        <div class="divider"></div>
       </div>
 
-      <div class="gallery-controls reveal">
-        <div class="hint-pill">Mouse: clic + arrastrar / rueda</div>
-        <div class="hint-pill">Táctil: arrastrar / pellizcar</div>
-        <div class="hint-pill">Botón “Ampliar” para vista destacada</div>
+      <!-- Instrucciones de uso -->
+      <div class="models-help reveal">
+        <div class="models-help__item">
+          <span class="icon">🖱️</span>
+          <span>Arrastra para rotar</span>
+        </div>
+        <div class="models-help__item">
+          <span class="icon">🔍</span>
+          <span>Rueda del mouse o pellizca para zoom</span>
+        </div>
+        <div class="models-help__item">
+          <span class="icon">📱</span>
+          <span>En móvil, interactúa con el dedo</span>
+        </div>
       </div>
 
-      <div class="models-grid" id="modelsGrid"></div>
-    </section>
+      <!-- Galería — las tarjetas se renderizan dinámicamente desde script.js -->
+      <div class="models-gallery" id="models-gallery"></div>
+    </div>
+  </section>
 
-    <section class="section author" id="autora">
+  <!-- ============================================================
+       AUTORA
+       ============================================================ -->
+  <section id="autora" class="section">
+    <div class="container">
+      <div class="section__header reveal">
+        <span class="section__tag">Investigadora</span>
+        <h2 class="section__title">Sobre la Autora</h2>
+        <div class="divider"></div>
+      </div>
+
       <div class="author-card reveal">
-        <span class="eyebrow">Autora</span>
-        <h2>Nathalia Torres</h2>
-        <p>
-          Proyecto de grado en arqueología presentado en formato web para comunicar resultados,
-          procesos y material de apoyo visual de una manera contemporánea, clara e interactiva.
-        </p>
-        <p class="author-note">
-          Aquí puedes agregar después universidad, director(a), grupo de investigación, año, resumen
-          final y enlaces complementarios.
-        </p>
+        <div class="author-avatar" aria-hidden="true">NT</div>
+        <div class="author-info">
+          <h3>Nathalia Torres</h3>
+          <p class="author-role">Arqueóloga · Investigadora en Patrimonio Digital</p>
+          <p>
+            Nathalia Torres es estudiante e investigadora dedicada al estudio del patrimonio
+            arqueológico mediante herramientas digitales. Su trabajo integra métodos tradicionales
+            de excavación y análisis con tecnologías de documentación 3D, buscando nuevas formas
+            de preservar, analizar y comunicar la riqueza del pasado prehispánico.
+          </p>
+          <p style="margin-top: 12px;">
+            Este proyecto de grado representa la culminación de su formación académica
+            y su compromiso con la arqueología digital como campo emergente en Latinoamérica.
+          </p>
+        </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <footer class="site-footer">
-    <p>Diseño web para tesis de arqueología · Nathalia Torres</p>
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="footer">
+    <p class="footer__text">
+      © 2025 Nathalia Torres — Proyecto de Grado en Arqueología Digital.
+      Todos los derechos reservados.
+    </p>
   </footer>
 
-  <div class="modal" id="viewerModal" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal></div>
-    <div class="modal-content panel">
-      <button class="modal-close" id="closeModal" aria-label="Cerrar visor">✕</button>
-      <div class="modal-header">
-        <span class="eyebrow">Vista ampliada</span>
-        <h3 id="modalTitle">Modelo 3D</h3>
-        <p id="modalDescription"></p>
+  <!-- ============================================================
+       MODAL — Visor 3D ampliado
+       ============================================================ -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content" id="modal-viewer-container">
+      <button class="modal-close" id="modal-close" aria-label="Cerrar visor">✕</button>
+      <div class="modal-loading" id="modal-loading">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <div class="spinner"></div>
+          <span>Cargando modelo…</span>
+        </div>
       </div>
-      <div class="modal-viewer" id="modalViewer"></div>
-      <div class="modal-help">Arrastra para rotar · rueda o pellizco para zoom · doble toque/clic para recentrar</div>
+      <span class="modal-title" id="modal-title"></span>
     </div>
   </div>
 
-  <script defer src="script.js"></script>
-  <script type="module" src="viewer3d.js"></script>
+  <!-- Scripts -->
+  <script src="./viewer3d.js"></script>
+  <script src="./script.js"></script>
+
 </body>
 </html>
