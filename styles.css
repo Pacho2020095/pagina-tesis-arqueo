@@ -325,6 +325,17 @@ canvas {
   border-bottom: 1px solid var(--line);
 }
 
+.model-preview {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(0.82) brightness(0.82);
+  opacity: 0.58;
+  pointer-events: none;
+}
+
 .model-viewer,
 .modal-viewer {
   width: 100%;
