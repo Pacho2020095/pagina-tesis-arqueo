@@ -342,6 +342,49 @@ canvas {
   height: 100%;
 }
 
+.model-viewer {
+  position: relative;
+  z-index: 2;
+}
+
+.model-viewer-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.7rem;
+  padding: 1.2rem;
+  text-align: center;
+  color: var(--text);
+}
+
+.model-viewer-fallback strong {
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+}
+
+.model-viewer-fallback span {
+  max-width: 320px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.fallback-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.06);
+  color: var(--accent);
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .model-placeholder,
 .model-loading,
 .model-error {
@@ -419,6 +462,11 @@ canvas {
   font-size: 0.95rem;
 }
 
+#modalDescription {
+  color: var(--muted);
+  margin: 0;
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -484,18 +532,27 @@ canvas {
 }
 
 .reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.reveal-delay {
-  transition-delay: 0.12s;
+  opacity: 1;
+  transform: none;
 }
 
 .reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
+  animation: fadeUp 0.7s ease both;
+}
+
+.reveal-delay.visible {
+  animation-delay: 0.12s;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 1080px) {
