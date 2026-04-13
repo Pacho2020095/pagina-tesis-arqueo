@@ -859,3 +859,197 @@ h1,h2,h3,h4 {
   }
   .hero__cta { padding: 12px 28px; }
 }
+
+/* ============================================================
+   FICHAS ARQUEOLÓGICAS — detalle técnico de cada modelo
+   ============================================================ */
+.model-card__header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.model-card__catalog {
+  font-size: .76rem;
+  color: var(--color-text-muted);
+  letter-spacing: .3px;
+}
+
+.model-card__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 18px;
+}
+
+.model-meta-item {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 74px;
+}
+
+.model-meta-item__label {
+  display: block;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+  margin-bottom: 7px;
+}
+
+.model-meta-item__value {
+  display: block;
+  font-size: .9rem;
+  color: var(--color-heading);
+  line-height: 1.45;
+}
+
+.model-card__chronology {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px 16px;
+  background: rgba(200,169,110,.06);
+  margin-bottom: 16px;
+}
+
+.model-card__chronology-title {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--color-accent);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.model-card__chronology-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.model-chrono-item {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.model-chrono-item__label {
+  display: block;
+  font-size: .7rem;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+
+.model-chrono-item__value {
+  display: block;
+  font-size: .92rem;
+  color: var(--color-heading);
+}
+
+.model-card__note {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(255,255,255,.02);
+}
+
+.model-card__note-label {
+  display: block;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-accent);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.model-card__note p {
+  margin: 0;
+  font-size: .86rem;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+}
+
+.model-card__biblio {
+  margin-bottom: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0 16px;
+  background: rgba(255,255,255,.015);
+}
+
+.model-card__biblio summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 14px 0;
+  font-size: .82rem;
+  color: var(--color-heading);
+  font-weight: 600;
+}
+
+.model-card__biblio summary::-webkit-details-marker {
+  display: none;
+}
+
+.model-card__biblio[open] summary {
+  color: var(--color-accent);
+}
+
+.model-card__biblio p {
+  margin: 0 0 16px;
+  color: var(--color-text-muted);
+  font-size: .82rem;
+  line-height: 1.7;
+}
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--color-heading);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background .25s var(--ease), border-color .25s var(--ease), color .25s var(--ease);
+}
+
+.btn-link:hover {
+  background: rgba(255,255,255,.05);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+@media (max-width: 680px) {
+  .model-card__meta-grid,
+  .model-card__chronology-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .model-card__header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .model-card__actions {
+    flex-direction: column;
+  }
+
+  .btn-expand,
+  .btn-link {
+    width: 100%;
+    justify-content: center;
+  }
+}
